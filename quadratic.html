@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic</title>
+</head>
+<body>
+    
+    <script>
+        function quadraticEquation(a,b,c){
+        if( !isNaN(a) && !isNaN(a) && !isNaN(a) ){
+            let discriminant= b**2 - 4*a*c;
+            let mathIssue ='уравнение '+(a<0 && '-' ||'') +(Math.abs(a)!=1 && Math.abs(a) || '')+'х^2 '+(b<0 && '-' ||'+')+' '+(Math.abs(b)!=1 && Math.abs(b) || '')+'x '+(c<0 && '-' ||'+')+' '+Math.abs(c)+' = 0 ';
+            if (discriminant>0){
+                let x1=(-b+(b**2-4*a*c)**(1/2))/(2*a);
+                let x2=(-b-(b**2-4*a*c)**(1/2))/(2*a);
+                console.log(mathIssue + 'имеет корни х1 = ' + x1 + ' и х2 = ' + x2);
+            }
+            else if (discriminant==0){
+                let x1=-(b/(2*a));
+                console.log(mathIssue + 'имеет один корень х = ' + x1);
+            }
+            else console.log(mathIssue + 'не имеет вещественных корней');
+        } else {
+            console.log('Аргументы не являются цифрами!');
+        }
+        }
+        quadraticEquation(1, -8, 72);
+        quadraticEquation(1, 12, 36);
+        quadraticEquation(4, -8, 1);
+        quadraticEquation(-1,-1,-1);
+        quadraticEquation(-2,-2,-2);
+        quadraticEquation(1,1,1);
+        quadraticEquation(2,2,2);
+        quadraticEquation('f','d','');
+    </script>
+</body>
+</html>

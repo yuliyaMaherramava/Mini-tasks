@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression</title>
+</head>
+<body>
+    
+<script>
+     function compress(str){
+        let arr = str.split('');
+        let counter = 1;
+        let result = '';
+        if ( arr.length !== 1) {
+            for ( let i = 0; i < arr.length; i++){
+                if ( arr[i] === arr[i+1]){
+                    counter++;
+                } else {
+                    result += (arr[i] + counter);
+                    counter = 1;
+                };
+            };
+        } else { 
+            result = arr[0];
+        };
+        console.log(`"${str}" => "${result}"`); 
+    };
+
+    compress("a");
+    compress("aaa");
+    compress("aabbb");
+    compress("aaabcc");
+    compress("aaaaaaaaaaaaaaaaaaaaaaaaaaaabcc");
+
+    function uncompress(str){
+        let arr = str.split('');
+        let result = '';
+        let numberRepeated ='';
+        let letter='';
+        for ( let i = 0; i < arr.length; i++){
+            if ( isNaN(+arr[i]) ) {
+                letter = arr[i];
+                if (arr[i+1] == null){
+                    result = arr[i]; 
+                };
+            } else if (!isNaN(+arr[i])){
+                numberRepeated += String(arr[i]);
+                if (isNaN(+arr[i+1]) || arr[i+1] == null){
+                    result += letter.repeat(+numberRepeated); 
+                    numberRepeated = '';
+                };
+            };
+        };
+
+        console.log(`"${str}" => "${result}"`); 
+    };
+
+    uncompress("a");
+    uncompress("a10");
+    uncompress("a5");
+    uncompress("a2b3");
+    uncompress("a120b1888c3");
+
+</script>
+</body>
+</html>
