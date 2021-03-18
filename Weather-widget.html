@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>weather using API from openweathermap</title>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .weatherWindow {
+            position: fixed;
+            left:0;
+            background-color: rgb(77, 52, 243);
+            width:35px;
+            height:180px;
+            transition-property: width, height;
+            transition-duration: 500ms;
+            transition-timing-function:cubic-bezier(0, 0, 1, 1);
+            border-radius: 10px;
+        }
+
+        .btnClose{
+            display: block;
+            position: relative;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 35px;
+            height: 25px;
+            font-size: 0;
+            text-indent: -9999px;
+            appearance: none;
+            box-shadow: none;
+            border-radius: none;
+            border: none;
+            cursor: pointer;
+            background: none;
+        }
+        .btnClose:focus{
+            outline: none;
+        }
+        .btnClose span {
+            display: block;
+            position: absolute;
+            top: 15px;
+            left: 9px;
+            right: 9px;
+            height: 3px;
+            background: white;
+        }
+
+        .btnClose span::before,
+        .btnClose span::after {
+        position: absolute;
+        display: block;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #fff;
+        content: "";
+        }
+        
+        .btnClose span::before {
+        top: -7px;
+        }
+        
+        .btnClose span::after {
+        bottom: -7px;
+        }
+
+        .btnClose-htx span::before,
+        .btnClose-htx span::after {
+        transition-duration: 0.3s, 0.3s;
+        transition-delay: 0.3s, 0s;
+        }
+
+        .btnClose-htx span::before {
+        transition-property: top, transform;
+        }
+
+        .btnClose-htx span::after {
+        transition-property: bottom, transform;
+        }
+
+        .btnClose-htx.is-active span {
+        background: none;
+        }
+
+        .btnClose-htx.is-active span::before {
+        top: 0;
+        transform: rotate(45deg);
+        }
+
+        .btnClose-htx.is-active span::after {
+        bottom: 0;
+        transform: rotate(-45deg);
+        }
+        .btnClose-htx.is-active span::before,
+        .btnClose-htx.is-active span::after {
+        transition-delay: 0s, 0.3s;
+        }
+
+        #city{
+            color: white;
+            font-weight: 500;
+            font-size: medium;
+            font-family: system-ui;
+            display: inline-block;
+            margin-top:5px;
+            margin-left:8px;
+        }
+        .infoW img:first-of-type {
+            float: right;
+            margin-top:-25px;
+        }
+
+        #descrip , #wind, #degr , #forecast{
+            color: white;
+            font-family: system-ui;
+            font-size: large;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 20px;
+            padding-top: 5px;
+        }
+        #degr{
+            font-size: x-large;
+        }
+        #forecast{
+            margin-top: 3px;
+            display: block;
+            font-weight: 300;
+            font-size: small;
+            margin-left: 28%;
+            cursor:pointer;
+        }
+        .infoW3days{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-evenly;
+            margin-top: 25px;
+        }
+        .divForescast3{
+            flex-basis: 230px;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .daysForescast3 , .degrForescast3{
+            color: white;
+        }
+        #loader{
+            height: 50px;
+            margin: 0 auto;
+            display: block;
+            margin-top: 40px;
+        }
+        .iconForescast3{
+            float: right;
+            overflow: hidden;
+            width: 50px;
+            height: 50px;
+            margin-top: -18px;  
+        }
+        .isHide{
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<script>
+
+class WheatherWidget {
+    constructor(){
+        self = this;
+        this.cityID = "625144";
+        this.apiUrl = "https://api.openweathermap.org/data/2.5/";
+        this.apiKey = "241131c6b03d0776987c73a8213dcb68", //ваш apikey с сервиса
+        this.apiQuery3days = this.apiUrl + "/forecast?id=" + this.cityID + "&units=metric&lang=ru&appid=" + this.apiKey;
+        this.apiQuery = this.apiUrl + "/weather?id=" + this.cityID + "&units=metric&lang=ru&appid=" + this.apiKey;
+    }
+    getWeather(){
+        fetch(this.apiQuery)
+        .then(response => response.json())
+        .then(data => {
+            this.drawWidget(data);
+        })
+        .catch(error => console.error("Ошибка получение погоды. Причина: " + error));
+    }
+    getWeatherFor3days(container){
+        let loaderCont = document.querySelector('.infoW');
+        let loader = new Image();
+        loader.id = 'loader';
+        loader.src = 'https://i114.fastpic.ru/big/2021/0220/f9/592a2542ac0b4699ba6697d5d1ad13f9.gif';
+        loader.alt = 'downloading..';
+        loaderCont.append(loader)
+        // setTimeout(() => loaderCont.append(loader), 500);
+        fetch(this.apiQuery3days)
+        .then(response => response.json())
+        .then(data => {
+        
+            loader.remove();
+            this.drawForecastFor3days(data, container);
+        })
+        .catch(error => console.error("Ошибка получение погоды. Причина: " + error));
+    }
+    drawWidget(data){
+        let windowWeather = document.createElement('div');
+        windowWeather.classList.add('weatherWindow');
+        document.body.append(windowWeather);
+        //создаем кнопку для открытия\закрытия виджета
+        let buttonClose = document.createElement('button');
+        buttonClose.classList.add('btnClose');
+        buttonClose.classList.add('btnClose-htx');
+        windowWeather.append(buttonClose);
+        let spanClose = document.createElement('span');
+        spanClose.innerHTML='toggle menu';
+        buttonClose.append(spanClose);
+
+        //контейнер для содержимого в виджете
+        let infoWeather = document.createElement('div');
+        infoWeather.classList.add('isHide');
+        infoWeather.classList.add('infoW');
+        windowWeather.append(infoWeather);
+
+        //иконкa
+        let iconWeather = new Image();
+        iconWeather.src =  `http://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+        iconWeather.alt = data.weather[0].description;
+        infoWeather.append(iconWeather);
+
+        //название города
+        let cityName = document.createElement('span');
+        cityName.innerHTML = `&#128205; ${data.name}`;
+        cityName.id = 'city';
+        infoWeather.prepend(cityName);
+
+        //градусы
+        let degrees = document.createElement('span');
+        degrees.innerHTML = `${(data.main.temp).toFixed(1)}&#8451;`;
+        degrees.id = 'degr';
+        infoWeather.append(degrees);
+
+        //ветер
+        let wind = document.createElement('span');
+        wind.innerHTML = `Ветер ${data.wind.speed} м/c`;
+        wind.id = 'wind';
+        infoWeather.append(wind);
+
+        //описание
+        let descrWeather = document.createElement('span');
+        descrWeather.innerHTML = (data.weather[0].description)[0].toUpperCase() + (data.weather[0].description).slice(1);
+        descrWeather.id = 'descrip';
+        infoWeather.append(descrWeather);
+
+        // кнопка показать погоду на 3 дня
+        let forecast3days = document.createElement('span');
+        forecast3days.innerHTML ='Прогноз на 3 дня';
+        forecast3days.id = 'forecast';
+        infoWeather.append(forecast3days);
+
+        //вешаем слушатель на прогноз на 3 дня
+        forecast3days.addEventListener('click', function(e){
+            let infoWeather3days = document.querySelector('#infoW3days');
+
+            if (this.classList.contains("isForecastShowed")){
+                this.classList.remove("isForecastShowed");
+                windowWeather.style.height='180px';
+                forecast3days.innerHTML ='Прогноз на 3 дня';
+                infoWeather3days.classList.add('isHide');
+            } else{
+                this.classList.add("isForecastShowed");
+                forecast3days.innerHTML ='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Свернуть';
+                windowWeather.style.height='320px';
+                
+                if (!infoWeather3days){
+                    self.getWeatherFor3days(windowWeather);   
+                } else {
+                    setTimeout(() => infoWeather3days.classList.remove('isHide'),500);
+                }
+            }
+        })
+        //вешаем слушатель на кнопку открытия\закрытия
+        buttonClose.addEventListener( "click", function(e) {
+            e.preventDefault();
+            let infoWeather3days = document.querySelector('#infoW3days');
+            if (this.classList.contains("is-active")){
+                this.classList.remove("is-active")
+                windowWeather.style.width='35px';
+                infoWeather.classList.add('isHide');
+                if (forecast3days.classList.contains("isForecastShowed")){
+                    forecast3days.classList.remove("isForecastShowed");
+                    windowWeather.style.height='180px';
+                    forecast3days.innerHTML ='Прогноз на 3 дня';
+                    infoWeather3days.classList.add('isHide');
+            }
+            } else {
+                this.classList.add("is-active");
+                windowWeather.style.width='250px';
+                setTimeout(() => infoWeather.classList.remove('isHide'),500);
+            }
+        });
+    }
+    drawForecastFor3days(data,container){
+       //создаем  основной див куда будем создавать все элементы
+        let infoW3days = document.createElement('div');
+        infoW3days.id = 'infoW3days';
+        infoW3days.classList.add('infoW3days');
+        container.append(infoW3days);
+        //создаем дивы для каждого дня
+        let tomorrowDiv = document.createElement('div');
+        let afterTomorrowDiv = document.createElement('div');
+        let afterAfterTomorrowDiv = document.createElement('div');
+        tomorrowDiv.classList.add('divForescast3');
+        afterTomorrowDiv.classList.add('divForescast3');
+        afterAfterTomorrowDiv.classList.add('divForescast3');
+        //для даты 
+        let tomorrowDate = document.createElement('span');
+        let afterTomorrowDate = document.createElement('span');
+        let afterAfterTomorrowDate = document.createElement('span');
+        tomorrowDate.classList.add('daysForescast3');
+        afterTomorrowDate.classList.add('daysForescast3');
+        afterAfterTomorrowDate.classList.add('daysForescast3');
+
+        //градусы на 3 дня
+        let degreesTomorrow = document.createElement('span');
+        let degreesAfterTomorrow = document.createElement('span');
+        let degreesAfterAfterTomorrow = document.createElement('span');
+        degreesTomorrow.classList.add('degrForescast3');
+        degreesAfterTomorrow.classList.add('degrForescast3');
+        degreesAfterAfterTomorrow.classList.add('degrForescast3');
+
+        //иконки на 3 дня
+        let iconWeatherTomorrow = new Image();
+        let iconWeatherAfterTomorrow = new Image();
+        let iconWeatherTAfterAfteromorrow = new Image();
+        iconWeatherTomorrow.classList.add('iconForescast3');
+        iconWeatherAfterTomorrow.classList.add('iconForescast3');
+        iconWeatherTAfterAfteromorrow.classList.add('iconForescast3');
+
+        //массив для сохранения только тех данных из API , которые нам нужны ( на 12 часов каждого дня)
+        let dateArr = [];
+        //для нумерования элементов массива
+        for (let i = 0 ; i < data.list.length; i++){
+             let date = new Date(data.list[i].dt_txt);
+             if (date.getHours() == 12){
+               dateArr.push(data.list[i]);
+             }
+        }
+        //берем дату из массива и преобразовываем в нужный формат и записываем в html
+        tomorrowDate.innerHTML = (new Date(dateArr[0].dt_txt)).toLocaleString('ru-RU', { month: 'long', day: 'numeric'});
+        afterTomorrowDate.innerHTML = (new Date(dateArr[1].dt_txt)).toLocaleString('ru-RU', { month: 'long', day: 'numeric'});
+        afterAfterTomorrowDate.innerHTML =(new Date(dateArr[2].dt_txt)).toLocaleString('ru-RU', { month: 'long', day: 'numeric'});
+
+        //записываем в html данные полученные из массива по градусам, преобразованные до 1 знака после запятой
+        degreesTomorrow.innerHTML = `${(dateArr[0].main.temp).toFixed(1)}&#8451;`;
+        degreesAfterTomorrow.innerHTML = `${(dateArr[1].main.temp).toFixed(1)}&#8451;`;
+        degreesAfterAfterTomorrow.innerHTML = `${(dateArr[2].main.temp).toFixed(1)}&#8451;`;
+
+        //берем данные из нашего массива с отобранными данными и записываем в путь для получения иконки
+        iconWeatherTomorrow.src =  `http://openweathermap.org/img/wn/${dateArr[0].weather[0].icon}@2x.png`;
+        iconWeatherAfterTomorrow.src =  `http://openweathermap.org/img/wn/${dateArr[1].weather[0].icon}@2x.png`;
+        iconWeatherTAfterAfteromorrow.src =  `http://openweathermap.org/img/wn/${dateArr[2].weather[0].icon}@2x.png`;
+
+        //берем описание из массива и записываем в атрибут alt
+        iconWeatherTomorrow.alt = dateArr[0].weather[0].description;
+        iconWeatherAfterTomorrow.alt = dateArr[1].weather[0].description;
+        iconWeatherTAfterAfteromorrow.alt = dateArr[2].weather[0].description;
+
+        //вставляем в html
+
+        infoW3days.append(tomorrowDiv);
+        infoW3days.append(afterTomorrowDiv);
+        infoW3days.append(afterAfterTomorrowDiv);
+
+        tomorrowDiv.append(tomorrowDate);
+        tomorrowDiv.append(degreesTomorrow);
+        tomorrowDiv.append(iconWeatherTomorrow);
+        afterTomorrowDiv.append(afterTomorrowDate);
+        afterTomorrowDiv.append(degreesAfterTomorrow);
+        afterTomorrowDiv.append(iconWeatherAfterTomorrow);
+        afterAfterTomorrowDiv.append(afterAfterTomorrowDate);
+        afterAfterTomorrowDiv.append(degreesAfterAfterTomorrow);
+        afterAfterTomorrowDiv.append(iconWeatherTAfterAfteromorrow);
+    }
+}
+
+let weather = new WheatherWidget().getWeather();
+</script>
+    
+
+
+</body>
+</html>
