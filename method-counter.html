@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>method-counter</title>
+</head>
+<body>
+
+
+<script>
+    function getCounter(_x){
+        return {
+            x:_x,
+            count: function(y){
+                this.x += y;
+                return this;
+            },
+            log: function(){
+                console.log(this.x);
+                return this;
+            },
+            reset: function(){
+                this.x = 0;
+                return this;
+            }
+        };
+        
+    };
+    
+    var counter = getCounter(5);
+    counter.log().count(4).log().count(3).log().reset().log().count(8).log();
+
+</script>    
+</body>
+</html>
