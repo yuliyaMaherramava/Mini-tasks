@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        }
+        #base{
+            background-color: cyan;
+            width:850px;
+            height:650px;
+        }
+        #field{
+            background: url(https://i.ibb.co/J30tgYt/football-field.jpg);
+            width:800px;
+            height:500px;
+            margin:0 auto;
+            position: relative;
+            
+        }
+        #player-Blue{
+            background-color: white;
+            border:1px solid blue;
+            height:120px;
+            width:50px;
+            margin:20px 20px 0px 20px;
+            padding: 0px 13px;
+            display: inline-block;
+            cursor: pointer;
+        }
+        #player-Yellow{
+            background-color: white;
+            border:1px solid yellow;
+            height:120px;
+            width:50px;
+            margin:20px 20px 0px 20px;
+            display: inline-block;
+            padding: 0px 13px;
+            cursor: pointer;
+        }
+        #ball{
+            cursor: pointer;
+        }
+        .selected{
+            border:2px dashed red;
+        }
+
+    </style>
+    <title>football</title>
+</head>
+<body>
+    
+    <div id='base'> 
+        <div id='field'></div>
+        <div id='player-Blue'>
+            <img src="https://i.ibb.co/jvhJbWw/football-blue.png" draggable="true" height='120px' id='playerBlue' class='playerBlue'>
+        </div>
+        <div id='player-Yellow'>
+            <img src="https://i.ibb.co/KsNTvVB/football-yellow.png" draggable="true" height='120px' id='playerYellow' class='playerYellow' >
+        </div>
+            <img src='https://i.ibb.co/9HS3SGD/football-ball.png' width='80px' draggable="true" id='ball'>
+    </div>
+
+    <script>
+        const elemPlayerBlue = document.querySelector('#playerBlue');
+        const elemPlayerYellow = document.querySelector('#playerYellow');
+        const elemBall = document.querySelector('#ball');
+        const parent = document.querySelector('#field');
+        const base = document.querySelector('#base');
+        let countYellow = null;
+        let countBlue = null;
+        let shiftX;
+        let shiftY;
+
+        base.addEventListener('dragstart', function(event) {
+        let target = event.target;
+        event.dataTransfer.setData("text", event.target.id);
+        shiftX = event.clientX - target.getBoundingClientRect().left;
+        shiftY = event.clientY - target.getBoundingClientRect().top;
+        });
+
+        base.addEventListener('dragenter', function(event) {
+        event.preventDefault();
+        let targetParent = event.target;
+        var data = event.dataTransfer.getData("text");
+        var elem = document.getElementById(data);
+        if (event.target == parent || event.target == base ){
+            targetParent.classList.add('selected');
+        }
+        });
+
+        base.addEventListener('dragover', function(event) {
+        event.preventDefault();
+        });
+
+        base.addEventListener('dragleave', function(event) {
+        event.preventDefault();
+        let targetParent = event.target;
+        targetParent.classList.remove('selected');
+        });
+
+        base.addEventListener('drop', function(event) { 
+        event.preventDefault();
+        let targetParent = event.target;
+        let data = event.dataTransfer.getData("text");
+        let elem = document.getElementById(data);
+        //фун-ция, ктр перемещает элемент
+        function moveAt(el){
+            el.style.position = 'absolute';
+            el.style.left=event.clientX - shiftX + 'px';
+            el.style.top=event.clientY - shiftY + 'px';
+        };
+            if(event.target == parent){
+                if (elem.className == 'playerYellow' && countYellow < 6 ){
+                    if (elem.parentElement == parent){
+                        moveAt(elem);
+                    } else {
+                    let nodeCopy = elem.cloneNode(true);
+                    ++countYellow;
+                    nodeCopy.id = `newYellowId-${countYellow}`; 
+                    event.target.appendChild(nodeCopy);
+                    moveAt(nodeCopy);
+                    (countYellow == 6) ? elem.style.opacity = '0.4' : false;
+                    }
+                } 
+                else if(elem.className == 'playerBlue' && countBlue < 6){
+                    if (elem.parentElement == parent){
+                        moveAt(elem);
+                    } else {
+                    var nodeCopy = elem.cloneNode(true);
+                    ++countBlue;
+                    nodeCopy.id = `newBlueId-${countBlue}`; 
+                    event.target.appendChild(nodeCopy);
+                    moveAt(nodeCopy);
+                    (countBlue == 6) ? elem.style.opacity = '0.4' : false;
+                    }
+                }
+                else if (elem == elemBall){
+                    event.target.appendChild(elem);
+                    moveAt(elem);
+                } 
+            } else if (event.target == base){
+                if (elem !== elemBall){
+                    (elem.className == 'playerYellow') ? --countYellow : --countBlue;
+                    elem.remove();
+                    (elem.className == 'playerYellow' && countYellow < 6) ? elemPlayerYellow.style.opacity = '1' : false;
+                    (elem.className == 'playerBlue' && countBlue < 6) ? elemPlayerBlue.style.opacity = '1' : false;
+                }
+                else{
+                    event.target.appendChild(elem);
+                    moveAt(elem);
+                }
+            }
+            targetParent.classList.remove('selected');
+        });
+        
+    </script>
+</body>
+</html>
