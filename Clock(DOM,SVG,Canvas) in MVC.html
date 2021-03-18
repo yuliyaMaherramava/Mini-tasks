@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{
+            box-sizing: border-box;
+            margin:0px;
+            padding:0px;
+        }
+        .smallCircle{
+            text-align: center;
+        }
+        .line{
+            position: absolute;
+            z-index: 1;
+            transform-origin: 0 0;
+            background-color: #4e4949;
+            border-radius: 15px;
+        }
+        body{
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            box-sizing: border-box;
+            padding:30px;
+        }
+        
+
+    </style>
+    <title>Clocks</title>
+</head>
+<body>
+    <div id='DOM1'>
+        <button class='stop'>Стоп</button>
+        <button class='start'>Старт</button>
+        <p>Нью-Йорк (GMT - 5)</p>
+        <div id="clockDOM1"></div>
+    </div>
+
+    <div id='DOM2'>
+        <button class='stop'>Стоп</button>
+        <button class='start'>Старт</button>
+        <p>Лондон (GMT)</p>
+        <div id="clockDOM2"></div>
+    </div>
+
+    <div id='SVG1'>
+        <button class='stop'>Стоп</button>
+        <button class='start'>Старт</button>
+        <p>Берлин (GMT + 1)</p>
+        <svg id="Clocksvg1" height="300" width="300"></svg>
+    </div>
+    
+    <div id='SVG2'>
+        <button class='stop'>Стоп</button>
+        <button class='start'>Старт</button>
+        <p>Минск (GMT + 3)</p>
+        <svg id="Clocksvg2" height="300" width="300"></svg>
+    </div>
+
+    <div id='Canvas1'>
+        <button class='stop'>Стоп</button>
+        <button class='start'>Старт</button>
+        <p>Токио (GMT + 9)</p>
+        <canvas id='clockCanvas1' width ='300' height='300'>Ваш браузер не поддерживает canvas</canvas>
+    </div>
+
+    <div id='Canvas2'>
+        <button class='stop'>Стоп</button>
+        <button class='start'>Старт</button>
+        <p>Владивосток (GMT + 10)</p>
+        <canvas id='clockCanvas2' width ='300' height='300'>Ваш браузер не поддерживает canvas</canvas>
+    </div>
+
+    <script>
+        //controller
+        function ClockControllerButtons (){
+            let myModel = null; // с какой моделью работаем
+            let myField = null; // внутри какого элемента DOM наша вёрстка
+            let myContainer = null; // внутри какого элемента искать кнопки
+            let timerId = null;
+
+            this.init = function(model, field, container) {
+                myModel = model;
+                myField = field;
+                myContainer = container;
+
+                const buttonStop = myContainer.querySelector(".stop");
+                buttonStop.addEventListener("click", this.stop);
+                
+                const buttonStart = myContainer.querySelector(".start");
+                buttonStart.addEventListener("click", this.start);
+
+                myModel.draw();
+                this.start();
+            }
+            this.start = function(){
+                timerId = setInterval(myModel.updateTime,0);
+            }
+            this.stop = function(){
+                clearInterval(timerId);
+            }
+        }
+
+        //model
+        function Clock(){
+            let myView = null;
+            let offsetZone = null;
+
+            this.init = function(view, zone) {
+                myView = view;
+                offsetZone = zone;
+            };
+
+            this.updateTime = function(){
+                let date = new Date();
+                let utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+                let newDate = new Date(utc + (3600000*offsetZone));
+
+                let hrAngels = 30*newDate.getHours()-90; //Определяем угол для часов
+                let minAngels = 6*newDate.getMinutes()-90; //Определяем угол для минут
+                let secAngels = 6*newDate.getSeconds()-90;  //Определяем угол для секунд
+                myView.updateTime(newDate,hrAngels,minAngels,secAngels)
+            }
+            this.draw = function(){
+                myView.drawClock();
+            }
+        }
+
+        //View DOM
+        function ClockViewDOM(){
+            let myField = null; // внутри какого элемента DOM наша вёрстка
+            let hrLine = null;
+            let minLine = null;
+            let secLine = null;
+
+            this.init = function(field) {
+                myField = field;
+            }
+            this.drawClock = function(){
+                 //создаем большой круг - циферблат
+                 let bigCirclesize = '300';
+
+                let bigCircle = document.createElement('div');
+                bigCircle.style.backgroundColor='#f7f74f';
+                bigCircle.style.borderRadius='50%';
+                bigCircle.style.width= bigCirclesize + 'px';
+                bigCircle.style.height= bigCirclesize + 'px';
+                bigCircle.style.position='relative';
+
+                //добавляем его в div 
+                myField.appendChild(bigCircle);
+
+                //вычисляем координаты центра циферблата
+                let bigCircleCenterX= bigCircle.offsetLeft+bigCircle.offsetWidth/2;
+                let bigCircleCenterY = bigCircle.offsetTop+bigCircle.offsetHeight/2;
+
+                for (let i=30; i<=360; i+=30){ //отрисовываем через цикл все кружочки с часами
+                    let smallCircle = document.createElement('div');
+                    myField.appendChild(smallCircle); 
+                    smallCircle.style.backgroundColor='#65d865';
+                    smallCircle.style.borderRadius='50%';
+                    smallCircle.style.width=bigCirclesize/8 + 'px';
+                    smallCircle.style.height=bigCirclesize/8 + 'px';
+                    smallCircle.style.position='absolute';
+                    smallCircle.innerHTML = i/30; 
+                    smallCircle.style.fontSize = bigCirclesize*0.075 + 'px';
+                    smallCircle.classList.add('smallCircle');
+
+                    var angleRadians = i/180*Math.PI; //угол поворота
+                    let radius = bigCirclesize/2.5;
+                    var smallCircleCenterX = bigCircleCenterX + radius*Math.sin(angleRadians); //вычисляем центр маленького кружочка по X
+                    var smallCircleCenterY = bigCircleCenterY-radius*Math.cos(angleRadians); //вычисляем центр маленького кружочка по Y
+                    smallCircle.style.left = Math.round(smallCircleCenterX-smallCircle.offsetWidth/2) + "px"; //располаагаем мал. кружочек в браузере по горизонтале
+                    smallCircle.style.top = Math.round(smallCircleCenterY-smallCircle.offsetHeight/2) + "px"; //располаагаем мал. кружочек в браузере по вертикале
+                };
+
+                //создаем стрелки (часовую, минутную, секундную) и оформляем их
+                hrLine = document.createElement('div');
+                minLine = document.createElement('div');
+                secLine = document.createElement('div');
+
+                hrLine.classList.add('line');
+                minLine.classList.add('line');
+                secLine.classList.add('line');
+
+                hrLine.style.height = bigCirclesize*0.0175 + 'px';
+                minLine.style.height = bigCirclesize*0.01 + 'px';
+                secLine.style.height = bigCirclesize*0.005 + 'px';
+
+                hrLine.style.width = bigCirclesize/4 + 'px';
+                minLine.style.width = bigCirclesize/2.5 + 'px';
+                secLine.style.width = bigCirclesize/2.35 + 'px'; 
+
+                hrLine.style.left =  Math.round(bigCircleCenterX) + 'px';
+                hrLine.style.top = Math.round(bigCircleCenterY) +'px';
+                minLine.style.left = Math.round(bigCircleCenterX) +'px';
+                minLine.style.top = Math.round(bigCircleCenterY) +'px';
+                secLine.style.left = Math.round(bigCircleCenterX) +'px';
+                secLine.style.top = Math.round(bigCircleCenterY) +'px';
+
+                myField.appendChild(hrLine); 
+                myField.appendChild(minLine); 
+                myField.appendChild(secLine); 
+            }
+            
+            this.updateTime = function(newDate,hrAng,minAng,secAng){
+                hrLine.style.transform = `rotate(${(hrAng) + (minAng/12)}deg)`; //поворачиваем стрелку 
+                minLine.style.transform = `rotate(${(minAng)}deg)`;
+                secLine.style.transform = `rotate(${(secAng)}deg)`;
+            }
+        }
+    
+        //View SVG
+        function ClockViewSVG(){
+            let myField = null; // внутри какого элемента DOM наша вёрстка
+            let hrLine = null;
+            let minLine = null;
+            let secLine = null;
+
+            this.init = function(field) {
+                myField = field;
+            }
+            this.drawClock = function(){   
+                const svgNS = "http://www.w3.org/2000/svg";
+                hrLine = document.createElementNS(svgNS, "line");
+                minLine = document.createElementNS(svgNS, "line");
+                secLine = document.createElementNS(svgNS, "line");
+
+                const w = parseFloat(myField.getAttributeNS(null, "width"));
+                const h = parseFloat(myField.getAttributeNS(null, "height"));
+
+                //создаем большой круг - циферблат
+                let circle = document.createElementNS(svgNS,"circle");
+
+                circle.setAttributeNS(null,"cx", w/2); //задаем координату X для отображения
+                circle.setAttributeNS(null,"cy", h/2);//задаем координату Y для отображения
+                circle.setAttributeNS(null,"r", w/2); //задаем радиус 
+                circle.setAttributeNS(null,"fill","#f7f74d"); //задаем заливка
+                circle.setAttributeNS(null,"stroke","none"); //цвет границы
+
+                myField.appendChild(circle); //добавляем его в svg
+
+                for (let i=30; i<=360; i+=30){ //отрисовываем через цикл все кружочки с часами
+                    let smallCircle = document.createElementNS(svgNS,"circle");
+                    myField.appendChild(smallCircle);
+                    let radius = w/2.5;
+                    var angleRadians = i/180*Math.PI; //угол поворота
+                    var smallCircleCenterX =w/2+radius*Math.sin(angleRadians); //вычисляем центр маленького кружочка по X
+                    var smallCircleCenterY = h/2-radius*Math.cos(angleRadians); //вычисляем центр маленького кружочка по Y
+
+                    smallCircle.setAttributeNS(null,"cx", smallCircleCenterX);//задаем координату X для отображения
+                    smallCircle.setAttributeNS(null,"cy", smallCircleCenterY);//задаем координату Y для отображения
+                    smallCircle.setAttributeNS(null,"r", w/16); //задаем радиус 
+                    smallCircle.setAttributeNS(null,"fill","#65d865");//задаем заливка
+                    smallCircle.setAttributeNS(null,"stroke","none");//цвет границы
+
+                    let textSVG = document.createElementNS(svgNS,"text"); //добавляем циферки в часы 
+                    textSVG.setAttributeNS(null,"x", smallCircleCenterX - w*0.032);
+                    textSVG.setAttributeNS(null,"y", smallCircleCenterY + w*0.02);
+                    textSVG.setAttributeNS(null,"fill", 'black');
+                    textSVG.setAttributeNS(null,"font-size", w*0.075);
+                    textSVG.textContent=i/30;
+                    myField.appendChild(textSVG);
+                }
+
+                //отрисовываем стрелки
+                function fullAtrrLine(elem , x2, width){
+                    elem.setAttributeNS(null,"x1", w/2);
+                    elem.setAttributeNS(null,"x2", x2);
+                    elem.setAttributeNS(null,"y1", h/2);
+                    elem.setAttributeNS(null,"y2", h/2);
+                    elem.setAttributeNS(null,"stroke-linecap", 'round');
+                    elem.setAttributeNS(null,"stroke", "#4e4949");
+                    elem.setAttributeNS(null,"stroke-width", width);
+                    myField.appendChild(elem);   
+                }
+                
+                fullAtrrLine(hrLine,w-w*0.25,w*0.0175); 
+                fullAtrrLine(minLine,w-w*0.125,w*0.01);
+                fullAtrrLine(secLine,w-w*0.025,w*0.005);
+            }
+            this.updateTime = function(newDate,hrAng,minAng,secAng){
+                const w = parseFloat(myField.getAttributeNS(null, "width"));
+                const h = parseFloat(myField.getAttributeNS(null, "height"));
+
+                hrLine.setAttribute('transform', `rotate(${hrAng} ${w/2} ${h/2})`); 
+                minLine.setAttribute('transform', `rotate(${minAng} ${w/2} ${h/2})`);
+                secLine.setAttribute('transform',`rotate(${secAng} ${w/2} ${h/2})`);
+            }
+        }
+    
+        //View Canvas
+        function ClockViewCanvas(){
+            let myField = null; // внутри какого элемента DOM наша вёрстка
+
+            this.init = function(field) {
+                myField = field;
+            }
+
+            this.drawClock = function(newDate = new Date()){   
+                if (myField.getContext('2d')) {
+                    var ctx = myField.getContext('2d');
+                };
+                //очищаем канвас
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);  
+
+                let hr = newDate.getHours();
+                let min = newDate.getMinutes();
+                let sec = newDate.getSeconds();
+
+                //рисуем циферблат - круг
+                ctx.fillStyle = '#f7f74d'; 
+                ctx.beginPath();
+                var circleCenterX = myField.width/2;  //вычисляем центр циферблата по X
+                var circleCenterY = myField.height/2; //вычисляем центр циферблата по Y
+                let radiusCircle = myField.height/2;
+                ctx.arc(circleCenterX, circleCenterY, radiusCircle, 0, 2*Math.PI); // центр x1 y1 200px, 200px , радиус 200px, старруем с 0 угла до 2ПИ
+                ctx.fill();
+                //отрисовываем через цикл все кружочки с часами
+                for (let i=30; i<=360; i+=30){ 
+                    ctx.fillStyle = '#65d865'; 
+                    ctx.strokeStyle = '#65d865';
+                    var angleRadians = i/180*Math.PI; //угол поворота
+                    let radius = ctx.canvas.height/2.5
+                    var smallCircleCenterX =circleCenterX+radius*Math.sin(angleRadians); //вычисляем центр маленького кружочка по X
+                    var smallCircleCenterY = circleCenterY-radius*Math.cos(angleRadians); //вычисляем центр маленького кружочка по Y
+                    ctx.beginPath();
+                    ctx.arc(smallCircleCenterX, smallCircleCenterY, ctx.canvas.width/20, 0, 2*Math.PI); 
+                    ctx.fill();
+                    ctx.stroke();
+                    let theString = i/30; //текст кружочка с циферкой
+                    ctx.font = `${ctx.canvas.height*0.06}px Times New Roman`;
+                    ctx.fillStyle = 'black';
+                    ctx.fillText(theString, smallCircleCenterX-ctx.canvas.height*0.02, smallCircleCenterY + ctx.canvas.height*0.03 );
+                }
+
+                //отрисовываем минутную стрелку
+                    let lengthMinutes = circleCenterX - 60; // определяем длину минутной линии как половина круга минус 60px
+                    let minAngle =6*(min + (1/60)*sec); // прибавляем к углу поворота тек. стрелки угол поворота более быстрой стрелки, умноженный на коэффициент, обозначающий его долю от угла текущей стрелки.
+                    ctx.restore();
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#4e4949';
+                    ctx.lineCap = 'round';
+                    ctx.lineWidth = ctx.canvas.height*0.01; //задаем ширину линии
+                    // ctx.rotate((Math.PI / 30) * min + (Math.PI / 1800) * sec);
+                    ctx.moveTo(circleCenterX,circleCenterY); //ставим начальную точку в центр циферблата
+                    ctx.lineTo(circleCenterX + lengthMinutes*Math.cos(Math.PI/2 - minAngle*(Math.PI/180)),
+                                circleCenterY - lengthMinutes*Math.sin(Math.PI/2 - minAngle*(Math.PI/180))); //рисуем линию до конечной точки
+                    ctx.stroke(); //прорисовывем линию, чтобы она стала видна
+
+                //отрисовываем секундную стрелку
+                    let lengthSeconds = circleCenterX - 30;// определяем длину секундной линии как половина круга минус 30px
+                    let secAngle =6*sec; //определяем угол (1/60 сек)*360градусов = 6 градусов
+                    ctx.restore();
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#4e4949';
+                    ctx.lineCap = 'round';
+                    ctx.lineWidth = ctx.canvas.height*0.005; //задаем ширину линии
+                    // ctx.rotate(sec * Math.PI / 30);
+                    ctx.moveTo(circleCenterX,circleCenterY); //ставим начальную в центр циферблата
+                    ctx.lineTo(circleCenterX + lengthSeconds*Math.cos(Math.PI/2 - secAngle*(Math.PI/180)),
+                                circleCenterY - lengthSeconds*Math.sin(Math.PI/2 - secAngle*(Math.PI/180))); //рисуем линию до конечной точки
+                    ctx.stroke(); //прорисовывем линию, чтобы она стала видна
+
+                //отрисовываем часовую стрелку
+                    let lengthHour =  lengthMinutes / 1.4;// определяем длину часовой линии исходя из размеров минутной стрелки
+                    let hrAngle =30*(hr + (1/60)*min);  // прибавляем к углу поворота тек. стрелки угол поворота более быстрой стрелки, умноженный на коэффициент, обозначающий его долю от угла текущей стрелки.
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#4e4949';
+                    ctx.lineCap = 'round';
+                    ctx.lineWidth = ctx.canvas.height*0.0175; //задаем ширину линии
+                    // ctx.rotate(30*hr-90 + (6*min-90)/12);
+                    ctx.moveTo(circleCenterX,circleCenterY); //ставим начальную в центр циферблата
+                    ctx.lineTo(circleCenterX + lengthHour*Math.cos(Math.PI/2 - hrAngle*(Math.PI/180)),
+                            circleCenterY - lengthHour*Math.sin(Math.PI/2 - hrAngle*(Math.PI/180))); //рисуем линию до конечной точки
+                    ctx.stroke(); //прорисовывем линию, чтобы она стала видна
+            };
+
+            this.updateTime = function(newDate,hrAng,minAng,secAng){
+                this.drawClock(newDate);
+            }
+        }
+    /*
+
+      настройка, инициализация первого комплекта
+    */
+    // создаём все три компонента
+    const clockDOM1Model = new Clock();
+    const clockDOM1View = new ClockViewDOM();
+    const clockDOM1Controller = new ClockControllerButtons();
+    // связываем компоненты друг с другом, указывая в каком контейнере/поле им работать
+    const containerElem1 = document.getElementById("DOM1");
+    const fieldElem1 = document.getElementById("clockDOM1");
+    clockDOM1Model.init(clockDOM1View,'-5');
+    clockDOM1View.init(fieldElem1);
+    clockDOM1Controller.init(clockDOM1Model,fieldElem1, containerElem1);
+
+    /*
+      настройка, инициализация второго комплекта
+    */
+    // создаём все три компонента
+    const clockDOM2Model = new Clock();
+    const clockDOM2View = new ClockViewDOM();
+    const clockDOM2Controller = new ClockControllerButtons();
+    // связываем компоненты друг с другом, указывая в каком контейнере/поле им работать
+    const containerElem2 = document.getElementById("DOM2");
+    const fieldElem2 = document.getElementById("clockDOM2");
+    clockDOM2Model.init(clockDOM2View,'0');
+    clockDOM2View.init(fieldElem2);
+    clockDOM2Controller.init(clockDOM2Model,fieldElem2, containerElem2);
+
+    /*
+      настройка, инициализация третьего комплекта
+    */
+    // создаём все три компонента
+    const clockSVG1Model = new Clock();
+    const clockSVG1View = new ClockViewSVG();
+    const clockSVG1Controller = new ClockControllerButtons();
+    // связываем компоненты друг с другом, указывая в каком контейнере/поле им работать
+    const containerElem3 = document.getElementById("SVG1");
+    const fieldElem3 = document.getElementById("Clocksvg1");
+    clockSVG1Model.init(clockSVG1View,'+1');
+    clockSVG1View.init(fieldElem3);
+    clockSVG1Controller.init(clockSVG1Model,fieldElem3, containerElem3);
+
+    /*
+      настройка, инициализация четвертого комплекта
+    */
+    // создаём все три компонента
+    const clockSVG2Model = new Clock();
+    const clockSVG2View = new ClockViewSVG();
+    const clockSVG2Controller = new ClockControllerButtons();
+    // связываем компоненты друг с другом, указывая в каком контейнере/поле им работать
+    const containerElem4 = document.getElementById("SVG2");
+    const fieldElem4 = document.getElementById("Clocksvg2");
+    clockSVG2Model.init(clockSVG2View,'+3');
+    clockSVG2View.init(fieldElem4);
+    clockSVG2Controller.init(clockSVG2Model,fieldElem4, containerElem4);
+
+    
+    /*
+      настройка, инициализация пятого комплекта
+    */
+    // создаём все три компонента
+    const clockCanvas1Model = new Clock();
+    const clockCanvas1View = new ClockViewCanvas();
+    const clockCanvas1Controller = new ClockControllerButtons();
+    // связываем компоненты друг с другом, указывая в каком контейнере/поле им работать
+    const containerElem5 = document.getElementById("Canvas1");
+    const fieldElem5 = document.getElementById("clockCanvas1");
+    clockCanvas1Model.init(clockCanvas1View,'+9');
+    clockCanvas1View.init(fieldElem5);
+    clockCanvas1Controller.init(clockCanvas1Model,fieldElem5, containerElem5);
+    
+    /*
+      настройка, инициализация шестого комплекта
+    */
+    // создаём все три компонента
+    const clockCanvas2Model = new Clock();
+    const clockCanvas2View = new ClockViewCanvas();
+    const clockCanvas2Controller = new ClockControllerButtons();
+    // связываем компоненты друг с другом, указывая в каком контейнере/поле им работать
+    const containerElem6 = document.getElementById("Canvas2");
+    const fieldElem6 = document.getElementById("clockCanvas2");
+    clockCanvas2Model.init(clockCanvas2View,'+10');
+    clockCanvas2View.init(fieldElem6);
+    clockCanvas2Controller.init(clockCanvas2Model,fieldElem6, containerElem6);
+
+    </script>
+</body>
+</html>
