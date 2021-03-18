@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events</title>
+</head>
+<body>
+<div id="task1">
+    <h4>Task1</h4>
+</div> 
+
+<div id="task2">
+    <h4>Task2</h4>
+</div>
+<div id="task3">
+    <h4>Task3</h4>
+</div>
+<div id="task4">
+    <h4>Task4</h4>
+</div>
+
+
+<script>
+    //1
+    let task1 = document.querySelector('#task1');
+    task1.insertAdjacentHTML('beforeend', '<a title="tut.by" href="https://www.tut.by/">Новости tut.by</a><br><a title="onliner.by" href="https://www.onliner.by/">Новости onliner.by</a><br><a title="dev.by" href="https://www.dev.by/">Новости dev.by</a>');
+    let links = document.querySelectorAll('a');
+    for (let i = 0; i < links.length; i++){
+        links[i].onmouseenter = function(){
+         links[i].innerHTML = links[i].title + ' (' + links[i].href + ')';  
+         links[i].onmouseenter = null;
+        };
+    };
+
+    //2
+    let task2 = document.querySelector('#task2');
+    task2.insertAdjacentHTML('beforeend', '<input type="text" value="night"></input><br><input type="text" value="street"></input><br><input type="text" value="light"></input><br><input type="text" value="pharmacy"></input>');
+    let inputs = task2.querySelectorAll('input');
+    for (let i = 0; i < inputs.length; i++){
+    inputs[i].addEventListener('click', handler2,{once:true});
+    function handler2() {
+        console.log(inputs[i].value);
+    };
+    };
+    //3 
+    let task3 = document.querySelector('#task3');
+    task3.insertAdjacentHTML('beforeend', '<p>10</p><p>2</p><p>3</p><p>4</p><p>5</p>');
+    let parag = document.querySelectorAll('p');
+    for (let i = 0; i < parag.length; i++){
+    parag[i].addEventListener('click', handler3,{once:true});
+    function handler3() {
+        let paragValue = parag[i].textContent;
+        parag[i].innerHTML = Math.pow(paragValue,2);
+    };
+    };
+    //4
+    let task4 = document.querySelector('#task4');
+    task4.insertAdjacentHTML('beforeend', '<input type="text" data-length="3" value="Кот"></input><br><input type="text" data-length="2" value="Птичка"></input><br><input type="text" data-length="6" value="Собака"></input><br>');
+    let blur = task4.querySelectorAll('input');
+    for (let i = 0; i < blur.length; i++){
+        blur[i].onblur = function(){
+            if (blur[i].value.length == blur[i].dataset.length){
+                blur[i].style.borderStyle='solid';
+                blur[i].style.borderColor='green';
+                blur[i].style.borderWidth='3px';
+            } else {
+                blur[i].style.borderStyle='solid';
+                blur[i].style.borderColor='red';
+                blur[i].style.borderWidth='3px';
+                console.log(blur[i].value.length);
+                console.log(blur[i].dataset.length);
+            }
+        }
+    }
+  
+    
+
+</script>
+</body>
+</html>

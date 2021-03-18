@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        li{
+           background-color:#ecc1c1;
+           border:1px solid #920505;
+           border-radius: 10px;
+            text-align: center;
+            width:600px;
+            padding:8px;
+            font-size: 20px;
+            margin:30px auto;
+            line-height: 50px;
+            cursor:grab;
+            list-style-type:none;
+        }
+        .selected{
+            background-color:rgb(177, 167, 167) ;
+            border: 2px dashed red;
+        }
+        .choosingEl{
+            border:dashed;
+
+        }
+        .correct{
+            border: 2px solid green;
+            background-color: rgb(116, 182, 116);;
+        }
+        
+
+    </style>
+    <title>Sortable list</title>
+</head>
+<body>
+    <script>
+        let ul = document.createElement('ul');
+        document.body.prepend(ul);
+        (function creatingDiv(arr){
+            for ( let i = 0; i < arr.length; i++){
+                let li = document.createElement('li');
+                li.innerHTML = arr[i];
+                li.dataset.correct = arr[i];
+                li.draggable = 'true';
+                ul.append(li);
+            }
+        })(['A','C','B','D']);
+
+        let correctedArr = ['A','B','C','D']; //правильный порядок элементов
+
+        ul.addEventListener('dragstart', onDragStart); // через делегирование событий. В начале перетаскивания добавляем класс selected элементу списка, на котором было вызвано событие, чтобы подсветить
+        function onDragStart(event){
+            event.target.classList.add('selected');
+
+        };
+
+        ul.addEventListener('dragend', onDragEnd);// через делегирование событий. После окончания перетаскивания удаляем  класс selected, вернув в первоначальынй вид
+        function onDragEnd (event){
+            event.target.classList.remove('selected');
+        }
+
+        ul.addEventListener('dragover', onDragOver); //разрешаем сбрасывать элементы в эту область
+        function onDragOver(event){
+
+            event.preventDefault();
+             // находим перемещаемый элемент
+            let selectedElement = ul.querySelector('.selected'); 
+
+             // находим элемент, над которым находится курсор
+            let currentElement = event.target;
+            // проверяем, чтобы элемент куда тащим не был равен таскаемому элементу и чтобы элемент был равен элементу списка( т.е li)
+            let isDrop = (selectedElement !== currentElement) && (currentElement.tagName == 'LI');
+            
+            if (!isDrop) return; //если проверку не прошли, то прекращаем выполнение
+        
+            //находим элемент, перед которым нужно вставить наш таскаемый элемент, сравнивая положение выбранного элемента и того, над которым держим мышку
+            let nextElement = (currentElement === selectedElement.nextElementSibling) ? currentElement.nextElementSibling : currentElement;
+            //вставляем 
+            ul.insertBefore(selectedElement,nextElement);
+        };
+
+
+        ul.addEventListener('drop', onDrop); //назначаем на дроп функцию сравнения массива элементов с корректным массивом
+        
+        function onDrop() {
+            let li = document.querySelectorAll('li'); //ищем все li
+            let array = []; //создаем массив для сравнения
+            for (let i=0; i<li.length; i++){ //добавляем в массив атрибуты li 
+                array.push(li[i].dataset.correct);
+            }
+
+            if(correctedArr.join('') == array.join('')){    // преобразовываем два массива в строки, чтобы сравнивать
+                for (let i=0; i<li.length; i++){
+                    li[i].classList.add('correct');    //если массивы равны, то ставим класс коррект и все li получат тогда зеленую отрисовку
+                }
+            }else {
+                for (let i=0; i<li.length; i++){
+                    li[i].classList.remove('correct'); //если же массивы не равны, то убираем класс коррект
+                }
+            }
+        
+        };
+        
+
+
+    </script>
+</body>
+</html>

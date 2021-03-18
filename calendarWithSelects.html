@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        #Calendar {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        table {
+            border-collapse: collapse;
+            margin:10px 10px 10px 0px;
+            }
+            
+            td, th {
+            border: 1px solid rgb(177, 55, 55);
+            padding: 5px;
+            text-align: center;
+            }
+            
+            th {
+            font-weight: bold;
+            background-color: #f1afaf;  
+            }
+            .hoverOn:hover{
+                background-color: #f1afaf;
+            }
+            .clicked {
+                background-color: #ee5050;
+            }
+            .nextMonthday{
+                color: gray;
+                background-color: antiquewhite;
+            }
+    </style>
+    <title>Calendar</title>
+</head>
+<body>
+<header>
+    <form name= 'selectDate'>
+        <select name ='Year'></select>
+        <select name ='Month'></select>
+        <button id='create' disabled>Cоздать</button>
+        <button id='delete' disabled>Удалить</button>
+    </form>
+
+</header>
+<div id='Calendar'></div>
+
+
+<script>
+    let selectYear = selectDate.Year; // вмето queryselectora можно найти элемент так
+    let selectMonth = selectDate.Month;
+    let months = ['Выбрать месяц','январь', 'февраль', 'март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+    let years =[];
+    //заполняем массив years годами
+    for (let i = 1979; i < 2025; i++) {
+    if (i == 1979) {
+        years.push('Выбрать год');
+    } else {
+        years.push(i);
+        }
+    };
+     //заполняем select массивом с наименованиями месяцев
+     for (let i = 0; i < months.length; i++){
+        let el = document.createElement('option');
+        el.text = months[i];
+        el.value = i-1;
+        selectMonth.options.add(el);
+    };
+     //заполняем select массивом с годами
+    for (let i = 0; i < years.length; i++){
+        let el = document.createElement('option');
+        el.text = years[i];
+        selectYear.options.add(el);
+    };
+   
+    //для проверки на disabled
+    selectYear.onchange = function () {
+        if (selectYear.selectedIndex == 0){
+            btnCreate.disabled = true;
+        } 
+        if (selectYear.selectedIndex && selectMonth.selectedIndex){
+            btnCreate.removeAttribute("disabled");
+        };
+    };
+     //для проверки на disabled
+    selectMonth.onchange = function () {
+        if (selectMonth.selectedIndex == 0){
+            btnCreate.disabled = true;
+        };
+        if (selectYear.selectedIndex && selectMonth.selectedIndex){
+            btnCreate.removeAttribute("disabled");
+        };
+    }
+    //вешаем на кнопку Создать обработчик на клик
+    let btnCreate = document.querySelector('#create');
+    btnCreate.onclick = function(){
+        let year = +selectYear[selectYear.selectedIndex].text;
+        let month = selectMonth[selectMonth.selectedIndex].value;
+        let calendar = document.createElement('div');
+        calendar.innerHTML = drawCalendar(year, month);
+        let elem = document.querySelector('#Calendar');
+        elem.append(calendar);
+        btnDelete.removeAttribute("disabled");
+
+         //делегирование событий , назначаем на DIV в котором лежит календарь
+         calendar.addEventListener("click", clickActions); 
+         calendar.addEventListener("mouseover", mouseAction); 
+
+        function clickActions(event){
+            let target = event.target;
+            let action = event.target.dataset.action;
+            if (action == 'prevYear'){
+                --year;
+                calendar.innerHTML = drawCalendar(year, month);
+            } else if (action == 'nextYear'){
+                ++year;
+                calendar.innerHTML = drawCalendar(year, month);
+            } else if (action == 'prevMonth'){
+                --month;
+                if (month == -1){
+                    month = 11;
+                    year -= 1;
+                }
+                calendar.innerHTML = drawCalendar(year, month);
+            } else if (action == 'nextMonth'){
+                ++month;
+                if (month == 12){
+                    month = 0;
+                    year += 1;
+                }
+                calendar.innerHTML = drawCalendar(year, month);
+            } else if (action == 'hoverFF' ) { //по клику на дату , чтобы она подсвечивалась. 
+                let clickedTd = calendar.getElementsByClassName("clicked"); //ищем все ячейки с классом clicked
+                if (clickedTd.length != 0) {    //если такие находятся, то убираем им класс 'clicked'
+                    clickedTd[0].classList.toggle('clicked')
+                }
+                target.classList.add('clicked'); //назначаем класс ячейке на которую кликнули
+            }
+        }
+        function mouseAction(event){
+            let target = event.target;
+            if (target.dataset.action != 'hoverFF') return;
+            target.classList.add('hoverOn');
+        }
+        return false;
+    };
+   //вешаем на кнопку Удалить обработчик на клик
+    let btnDelete = document.querySelector('#delete');
+    btnDelete.onclick = function(){
+        let elem = document.querySelector('#Calendar');
+        elem.firstChild.remove();
+        if (elem.children.length == 0){
+            btnDelete.disabled = true;
+        }
+        return false;
+    };
+    
+    function drawCalendar(year,month){
+        let date = new Date(year, month);
+        let table = `<table>
+            <tr>
+                <th id='last_Year' data-action='prevYear'>&#60;&#60;</th>
+                <th id='last_Month' data-action='prevMonth'>&#60;</th>
+                <th colspan='3';>${months[+month+1]} ${year}</th>
+                <th id='next_Month' data-action='nextMonth'>&#62;</th>
+                <th id='next_Year' data-action='nextYear'>&#62;&#62;</th>
+            </tr>
+            <tr>
+                <th>ПН</th>
+                <th>ВТ</th>
+                <th>СР</th>
+                <th>ЧТ</th>
+                <th>ПТ</th>
+                <th>СБ</th>
+                <th>ВС</th>
+            </tr>
+            <tr>`; // рисуем шапку таблицы
+        //если необходимы пустые ячейки до 1ой даты месяца, то прорисоываем их . Учитывая, что если это ВСК, то getDay = 0, а значит для него необходим свой цикл.
+        if (date.getDay() !== 0){
+            for (let i = 1; i < date.getDay(); i++) {
+                table += '<td></td>';
+            }
+        } else {
+            for (let i = 1; i < 7; i++) { //если воскресение ( i = 0), то отрисовываем 6 ячеек
+            table += '<td></td>';
+            }
+        };
+        // создаем ячейки с датами месяца церез цикл
+        while (date.getMonth() == month) { // пока тек. месяц равен заданному, цикл работает
+            table += '<td data-action="hoverFF">' + date.getDate() + '</td>'; //отрисовываем ячейку с числом 
+
+            if (date.getDay() == 0) { // если воскресение, то переходим на новую строку
+            table += '</tr><tr>';
+            }
+            date.setDate(date.getDate() + 1); // увеличиваем день на 1 , если будет 31 +1, то начнется новый месяц.
+        }
+        date.setDate(date.getDate() - 1); //возвращаем конец месяца
+
+        // добавляем пустые ячейки до конца недели , если месяц закончился не воскресением. 
+        if (date.getDay() !== 0) {
+            for (let i = date.getDay(); i < 7; i++) {
+            date.setDate(date.getDate() + 1);
+            table += `<td class="nextMonthday">${date.getDate()}</td>`;
+            }
+        };
+        // закрываем таблицу
+        table += '</tr></table>';
+        return table;
+    };
+
+</script>
+</body>
+</html>
+
+
