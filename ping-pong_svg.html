@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body{
+            margin:0;
+            padding:0;
+        }
+        svg{
+            display:block;
+            margin: 0 auto ;
+        }
+        button{
+            background-color: #c3c3c3;
+            width:100px;
+            height:30px;
+            border-radius: 10px;
+        }
+        .ball{
+            font-size: 50px;
+            font-weight: bold;
+        }
+    </style>
+    <title>ping-pong svg</title>
+</head>
+<body>
+    <button id='start'>Старт!</button>
+    <svg id="svgCount" height="100" width="800"></svg>
+    <svg id="svg" height="400" width="800"></svg>
+    <script>
+        //создаем переменные 
+        const svgNS = "http://www.w3.org/2000/svg";
+        const ballRadius ='10';
+        const racketHeight ='100';
+        const racketWidth ='15';
+        let player1Score = 0;
+        let player2Score = 0;
+        let rightPlayer=''; // для таймера движения ракеток
+        let leftPlayer=''; //для таймера движения ракеток
+
+        //делаем подготовку для создания SVG
+        const svg = document.getElementById("svg");
+        const svgCount = document.getElementById("svgCount")
+        const fieldWidth = parseFloat(svg.getAttributeNS(null, "width"));
+        const fieldHeight = parseFloat(svg.getAttributeNS(null, "height"));
+        const w = parseFloat(svgCount.getAttributeNS(null, "width"));
+        const h = parseFloat(svgCount.getAttributeNS(null, "height"));
+
+        //создаем большой прямоугольник - поле
+        let field = document.createElementNS(svgNS,"rect");
+        field.setAttributeNS(null,"x", 0); //задаем координату X для отображения
+        field.setAttributeNS(null,"y", 0);//задаем координату Y для отображения
+        field.setAttributeNS(null,"width", fieldWidth); //задаем ширину 
+        field.setAttributeNS(null,"height", fieldHeight); //задаем высоту
+        field.setAttributeNS(null,"fill","yellow"); //цвет заливки
+        field.setAttributeNS(null,"stroke","black"); //цвет линии
+        svg.appendChild(field); //добавляем его в svg
+
+        
+        //создаём мяч
+        let ball = document.createElementNS(svgNS,"circle");
+        ball.setAttributeNS(null,"cx", fieldWidth/2); //задаем координату X для отображения
+        ball.setAttributeNS(null,"cy", fieldHeight/2);//задаем координату Y для отображения
+        ball.setAttributeNS(null,"r", ballRadius); //задаем радиус 
+        ball.setAttributeNS(null,"fill","none"); //задаем заливка
+        ball.setAttributeNS(null,"stroke","none"); //цвет границы
+        svg.appendChild(ball); //добавляем его в svg
+
+        //создаем счёт 
+        let count = document.createElementNS(svgNS,"text"); 
+        count.setAttributeNS(null,"x", w/2-100)
+        count.setAttributeNS(null,"y", 80);
+        count.setAttributeNS(null,"fill", 'black');
+        count.setAttributeNS(null,"font-size", '100');
+        count.setAttributeNS(null,"font-weight", 'bold');
+        count.textContent='0 : 0';
+        svgCount.appendChild(count);//добавляем его в svg
+        
+        //создаем обратный отсчет
+        let fieldCount = document.createElementNS(svgNS,"text"); 
+        fieldCount.setAttributeNS(null,"x", fieldWidth/2-20)
+        fieldCount.setAttributeNS(null,"y", fieldHeight/2+20);
+        fieldCount.setAttributeNS(null,"fill", 'black');
+        fieldCount.setAttributeNS(null,"font-size", '80');
+        fieldCount.setAttributeNS(null,"font-weight", 'bold');
+        fieldCount.textContent='';
+        svg.appendChild(fieldCount);//добавляем его в svg
+
+        //создаем ракетки
+        let racketLeft = document.createElementNS(svgNS,"rect");
+        racketLeft.setAttributeNS(null,"x", 0); //задаем координату X для отображения
+        racketLeft.setAttributeNS(null,"y", fieldHeight/2-racketHeight/2);//задаем координату Y для отображения
+        racketLeft.setAttributeNS(null,"width", racketWidth); //задаем ширину 
+        racketLeft.setAttributeNS(null,"height", racketHeight); //задаем высоту
+        racketLeft.setAttributeNS(null,"fill","green"); //цвет заливки
+        racketLeft.setAttributeNS(null,"stroke","green"); //цвет линии
+        svg.appendChild(racketLeft); //добавляем его в svg
+
+        let racketRight = document.createElementNS(svgNS,"rect");
+        racketRight.setAttributeNS(null,"x", fieldWidth-racketWidth); //задаем координату X для отображения
+        racketRight.setAttributeNS(null,"y", fieldHeight/2-racketHeight/2);//задаем координату Y для отображения
+        racketRight.setAttributeNS(null,"width", racketWidth); //задаем ширину 
+        racketRight.setAttributeNS(null,"height", racketHeight); //задаем высоту
+        racketRight.setAttributeNS(null,"fill","blue"); //цвет заливки
+        racketRight.setAttributeNS(null,"stroke","blue"); //цвет линии
+        svg.appendChild(racketRight); //добавляем его в svg
+
+
+         //находим кнопку Старт и вешаем на нее запуск игры
+        const btn = document.querySelector('#start');
+        btn.onclick = start;
+
+        //описываем характеристики мяча 
+        let ballH={
+        posX : fieldWidth/2,
+        posY : fieldHeight/2,
+        width : ballRadius,
+        height: ballRadius,
+        speedX: 3,
+        speedY: 3,
+        //коофицент упругости - для ускорения шарика после отскока
+        bounce: 1.2,
+
+        update : function() {
+            ball.setAttributeNS(null,"cx", this.posX);
+            ball.setAttributeNS(null,"cy", this.posY);
+            }
+        }
+        
+        //размеры поля 
+        let fieldH={
+            width : fieldWidth,
+            height : fieldHeight
+        }
+        
+        //Описываем левую ракетку
+        let paddleLeft={
+        posX : 0,
+        posY : fieldHeight/2-racketHeight/2,
+        height: racketHeight,
+        width: racketWidth,
+        speed:1,
+        dY : 0,
+
+        update : function() {
+            racketLeft.setAttributeNS(null,"x", this.posX);
+            racketLeft.setAttributeNS(null,"y", this.posY);
+            }
+        }
+
+        //Описываем правую ракетку
+        let paddleRight={
+        posX : fieldWidth-racketWidth,
+        posY : fieldHeight/2-racketHeight/2,
+        height: racketHeight,
+        width: racketWidth,
+        speed:1,
+        dY : 0,
+
+        update : function() {
+            racketRight.setAttributeNS(null,"x", this.posX);
+            racketRight.setAttributeNS(null,"y", this.posY);
+            }
+        }
+        paddleLeft.update();
+        paddleRight.update();
+
+        let timerId; // для движения мячика
+        let timer; //для обратного отсчета
+        let reverseCount = 3; // задаём 3 секунды для обратного отсчета
+        //описываем функцию старта на кнопке , чтобы запустить мячик
+        function start() {
+            btn.disabled = true;
+            count.textContent=player1Score+' : '+player2Score;
+            let randomX = Math.random();
+            let randomY = Math.random();
+            if (randomX < 0.5) ballH.speedX *= -1; // т.е половина случаев будет в другом направлении по оси X
+            if (randomY < 0.5) ballH.speedY *= -1; // т.е половина случаев будет в другом направлении по оси Y
+
+            if (randomY < 0.3) ballH.speedY = 0.5; // Рандомный угол движения мяча по оси Y
+            if (randomY >= 0.3 && randomY <= 0.6) ballH.speedY = 1; 
+            if (randomY > 0.6) ballH.speedY = 1.5; 
+            countdown();    
+
+            function countdown(){
+                fieldCount.textContent = reverseCount;
+                reverseCount--;
+                if (reverseCount < 0){
+                    clearTimeout(timer);
+                    fieldCount.textContent ='';
+                    reverseCount = 3;
+                    ball.setAttributeNS(null,"fill","red");
+                    if (timerId){
+                        cancelAnimationFrame(timerId);
+                        ballH.posY=fieldHeight/2;
+                        ballH.posX=fieldWidth/2;
+                        ballH.update();
+                    }
+                    timerId = requestAnimationFrame(tick);
+                } else {
+                    timer = setTimeout(countdown,1000);
+                }
+            } 
+        }
+        //функция движения мячика
+        function tick() {
+        
+            ballH.posX += ballH.speedX;
+            ballH.posY += ballH.speedY;
+            
+            // вылетел ли мяч ниже пола?
+            if ((parseInt(ballH.posY) + parseInt(ballRadius)) > fieldH.height ) {
+                ballH.speedY = -ballH.speedY;
+                ballH.posY = fieldH.height - ballRadius;
+            }
+            // вылетел ли мяч выше потолка?
+            if ( parseInt(ballH.posY)-ballRadius < 0 ) {
+                ballH.speedY = -ballH.speedY;
+                ballH.posY=0 + parseInt(ballRadius);
+            }
+
+             // Проверка на то, пересекаются два объекта с известными координатами или нет
+            function collides(obj1, obj2) {
+            return  obj1.posX - parseInt(obj1.width) < obj2.posX + parseInt(obj2.width) &&
+                    obj1.posX + parseInt(obj1.width) > obj2.posX &&
+                    obj1.posY < obj2.posY + parseInt(obj2.height) &&
+                    obj1.posY + parseInt(obj1.height) > obj2.posY;
+            }
+
+            // Если мяч коснулся левой ракетки,
+            if (collides(ballH, paddleLeft)) {
+                
+                //увеличиваем скорость и 
+                // отправляем его в обратном направлении
+                ballH.speedX = -ballH.speedX * ballH.bounce;
+                // Увеличиваем координаты мяча на ширину ракетки, чтобы не засчитался новый отскок
+                ballH.posX = paddleLeft.posX + parseInt(paddleLeft.width)+ parseInt(ballRadius);
+                ballH.update();
+            }
+            // Проверяем и делаем то же самое для правой ракетки
+            else if (collides(ballH, paddleRight)) {    
+                
+                ballH.speedX = -ballH.speedX * ballH.bounce;
+                ballH.posX = parseInt(paddleRight.posX) - ballRadius*1.5;
+                ballH.update();
+            }
+            timerId = requestAnimationFrame(tick);  
+            // Если мяч улетел за игровое поле вправо — перезапускаем его
+            if ( +ballH.posX + parseInt(ballRadius) > fieldWidth && player1Score < 5)  {
+                player1Score++;
+                ballH.speedX = 2;
+                ballH.speedY = 2;
+                count.textContent=player1Score+' : '+player2Score;
+                cancelAnimationFrame(timerId);
+                ball.setAttributeNS(null,"fill","none");
+                // Снова запускаем его из центра
+                ballH.posX = fieldWidth / 2;
+                ballH.posY = fieldHeight/ 2;
+                (player1Score < 5)? start(): false;
+            } else if (ballH.posX - ballRadius < 0 && player2Score < 5){
+                player2Score++;
+                ballH.speedX = 2;
+                ballH.speedY = 2;
+                count.textContent=player1Score+' : '+player2Score;
+                cancelAnimationFrame(timerId);
+                ball.setAttributeNS(null,"fill","none");
+                // Снова запускаем его из центра
+                ballH.posX = fieldWidth / 2;
+                ballH.posY = fieldHeight/ 2;
+                (player2Score < 5)? start(): false;
+            }
+            if (player2Score == 5 || player1Score == 5){ 
+                player2Score = 0;
+                player1Score = 0;
+                cancelAnimationFrame(timerId);
+                clearTimeout(timer);
+                ball.setAttributeNS(null,"fill","none");
+                ballH.posX = fieldWidth / 2;
+                ballH.posY = fieldHeight/ 2;
+                btn.removeAttribute("disabled")
+            }
+            ballH.update();
+        }
+
+    // Отслеживаем нажатия клавиш
+    document.addEventListener('keydown', function (e) {
+    switch (event.key){
+         // Если нажата клавиша вверх,
+         // то двигаем правую платформу вверх
+        case 'ArrowUp':
+            event.preventDefault();
+            clearInterval(rightPlayer);
+            rightPlayer = setInterval(function(){
+                paddleRight.dy = -paddleRight.speed;
+                paddleRight.posY += paddleRight.dy;
+                // Проверяем если правая ракетка пытается вылезти за поле сверху
+                if (parseInt(paddleRight.posY) < 0) {
+                    paddleRight.posY = 0;
+                }
+                paddleRight.update();
+            },1)
+            break;
+        case 'ArrowDown':
+            event.preventDefault();
+            clearInterval(rightPlayer);
+            rightPlayer = setInterval(function(){
+                paddleRight.dy = paddleRight.speed;
+                paddleRight.posY += +paddleRight.dy;
+                // Проверяем если правая ракетка пытается вылезти за поле вниз
+                if (paddleRight.posY + parseInt(racketHeight) > fieldHeight) {
+                // то оставляем её на месте
+                paddleRight.posY = fieldHeight - racketHeight;
+                }
+                paddleRight.update();
+            },1)
+            break;
+        case 'Shift':
+            event.preventDefault();
+            clearInterval(leftPlayer);
+            leftPlayer = setInterval(function() {
+                paddleLeft.dy = -paddleLeft.speed;
+                paddleLeft.posY += +paddleLeft.dy;
+            // Проверяем если левая ракетка пытается вылезти за поле сверху
+                if (paddleLeft.posY < 0) {
+                paddleLeft.posY = 0;
+                } 
+                paddleLeft.update();
+            },1);
+            break;
+        case 'Control':
+            event.preventDefault();
+            clearInterval(leftPlayer);
+            leftPlayer = setInterval(function() {
+                paddleLeft.dy = +paddleLeft.speed;
+                paddleLeft.posY += +paddleLeft.dy;
+                // Если левая ракетка пытается вылезти за поле вниз,
+                if (paddleLeft.posY + +racketHeight > fieldHeight) {
+                    // то оставляем её на месте
+                    paddleLeft.posY = fieldHeight - racketHeight;
+                    }
+                paddleLeft.update();
+            },1);
+            break;
+        default:
+            break;
+    }
+  });
+
+  // Cледим за тем, когда кто-то отпустит клавишу, чтобы остановить движение ракетки
+  document.addEventListener('keyup', function (e) {
+    switch (event.key){
+        case 'ArrowUp':
+            clearInterval(rightPlayer);
+            break;
+        case 'ArrowDown':
+            clearInterval(rightPlayer);
+            break;
+        case 'Shift':
+            clearInterval(leftPlayer);
+            break;
+        case 'Control':
+            clearInterval(leftPlayer);
+            break;
+        default:
+            break;
+    };
+  });
+
+</script>
+</body>
+</html>
+
