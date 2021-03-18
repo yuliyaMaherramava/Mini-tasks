@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>editable-list</title>
+</head>
+<body>
+    <script>
+    // создается элемент ol в body
+        let elemOl = document.createElement('ol');
+        document.body.prepend(elemOl);
+    //инициализируяшаяся функция, которая, получая массив элементов, строит из них нумерованный список в элемент ol
+    (function (array) {
+        for (let i = 0; i < array.length; i++){
+            let li = document.createElement('li');
+            let span = document.createElement('span');
+            span.innerHTML = array[i];
+            li.prepend(span);
+            elemOl.append(li);
+            giveEventToSpan();
+        };
+    })(['HTML','CSS','JavaScript','React','Angular']);
+
+    //создание текстового поле ввода 
+    let textInput = document.createElement('input');
+    textInput.type = 'text';
+    document.body.append(textInput);
+
+    // создание кнопки "Add"
+    let buttonCreate = document.createElement('button');
+    buttonCreate.innerHTML='Add';
+    document.body.append(buttonCreate);
+
+    //по клику на кнопку 'Add' происходит роверка введенного значения в input, если не пустая строка, добавляется это значение в ol
+    buttonCreate.onclick = function(){
+        if (textInput.value != ''){
+            let li = document.createElement('li');
+            let span = document.createElement('span');
+            span.innerHTML = textInput.value;
+            li.prepend(span);
+            elemOl.append(li);
+            textInput.value = null;
+            buttonDelete.removeAttribute("disabled"); 
+            giveEventToSpan();
+        }   
+    };
+    // создание кнопки "Delete"
+    let buttonDelete = document.createElement('button');
+    buttonDelete.innerHTML='Delete';
+    document.body.append(buttonDelete);
+
+    //кнопка "Delete' по клику удаляет последний элемент списка
+    buttonDelete.onclick = function(){
+        elemOl.lastChild.remove();
+        let lastLi = document.querySelectorAll('li');
+        if (lastLi.length == 0){ // если нечего удалять, то становится задизейбленной
+            buttonDelete.disabled = true;
+        }
+    };
+    //По клику на span на его месте появляется input с этим значением в атрибуте value, которое мы можем модифицировать. При потере фокуса (blur) input исчезает, а его значение записывается в span
+    function giveEventToSpan (){
+        let spanClicked = document.querySelectorAll('span');
+        for (let i = 0; i < spanClicked.length; i++){
+            spanClicked[i].onclick = function clicked(){
+            let input = document.createElement('input');
+            input.value = this.innerHTML; //this здесь тот элемент, который перед .onclick т.е spanClicked
+            this.replaceWith(input);
+            input.focus();
+            input.onblur = function(){
+                let spanAfterLi = document.createElement('span');
+                spanAfterLi.innerHTML = this.value; //this здесь тот элемент, который перед .onclick т.е input
+                spanAfterLi.onclick = clicked;
+                input.replaceWith(spanAfterLi);
+                }
+            }
+        }
+    };
+
+
+    </script>
+</body>
+</html>
